@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <button @click="pay(1000)">1000원 결제</button>
     <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
@@ -7,6 +8,39 @@
     <router-view />
   </div>
 </template>
+
+<script>
+import axios from 'axios';
+import { ipcRenderer } from 'electron';
+
+export default {
+  mounted() {
+    ipcRenderer.on('kakaoPayCancel', () => {
+      console.log('결제 취소');
+    });
+
+    ipcRenderer.on('kakaoPayFinish', () => {
+      console.log('결제 완료');
+    });
+  },
+  methods: {
+    async pay(amount) {
+      const res = await axios({
+        timeout: 3000,
+        method: 'POST',
+        url: 'http://localhost:3000/ready',
+        data: {
+          amount,
+        },
+      });
+
+      const payURL = res.data.next_redirect_pc_url;
+      const tid = res.data.tid;
+      ipcRenderer.invoke('kakaoPay', payURL, tid);
+    },
+  },
+}
+</script>
 
 <style lang="scss">
 #app {
